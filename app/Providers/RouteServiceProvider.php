@@ -39,6 +39,8 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapWebRoutes();
 
+        $this->mapTenantRoutes();
+
         //
     }
 
@@ -55,6 +57,22 @@ class RouteServiceProvider extends ServiceProvider
              ->namespace($this->namespace)
              ->group(base_path('routes/web.php'));
     }
+
+    /**
+     * Define the "tenant" routes for the application.
+     *
+     * These routes all receive session state, CSRF protection, etc.
+     *
+     * @return void
+     */
+    protected function mapTenantRoutes()
+    {
+        Route::prefix('tenants')
+            ->middleware('web', 'check.domain.main')
+            ->namespace($this->namespace)
+            ->group(base_path('routes/tenant.php'));
+    }
+
 
     /**
      * Define the "api" routes for the application.
