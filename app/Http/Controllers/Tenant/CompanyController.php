@@ -2,44 +2,134 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Requests\Tenant\StoreUpdateCompanyFormRequest;
+use App\Events\Tenant\DatabaseCreated;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Events\Tenant\CompanyCreated;
-use App\Events\Tenant\DatabaseCreated;
-
 
 class CompanyController extends Controller
 {
-
-    public $company;
+    private $company;
 
     public function __construct(Company $company)
     {
         $this->company = $company;
+
+        $this->middleware('auth');
     }
 
-    public function store(Request $request)
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
     {
-        $company = $this->company->create([
-            'name' => 'Empresa x ' . str_random(5), 
-            'domain' => str_random(5) . 'minhaempresax.com', 
-            'bd_database' => 'multi_tenant' . str_random(5), 
-            'bd_hostname' => 'localhost', 
-            'bd_username' => 'root', 
-            'bd_password' => 'Metal00'
-        ]);
-        
-        event(new CompanyCreated($company));
+        $companies = $this->company->latest()->paginate();
 
-        // esto es para migrar en caso de que ya tenga la base
-        // y quiero sobreescribir datos de conexión (creo)
-        // ver video 2.13
-        // if (true)
-        //     event(new CompanyCreated($company));
-        // else
-        //     event(new DatabaseCreated($company));
+        return view('tenants.companies.index', compact('companies'));
+    }
 
-        dd($company);
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        return view('tenants.companies.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  App\Http\Requests\Tenant\StoreUpdateCompanyFormRequest  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(StoreUpdateCompanyFormRequest $request)
+    {
+        $company = $this->company->create($request->all());
+
+        if ($request->has('create_database'))
+            event(new CompanyCreated($company));
+        else
+            event(new DatabaseCreated($company));
+
+        return redirect()
+            ->route('company.index')
+            ->withSuccess('Registro exitoso');
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  string  $domain
+     * @return \Illuminate\Http\Response
+     */
+    public function show($domain)
+    {
+        // $company = $this->company->find($id);
+        $company = $this->company->where('domain', $domain)->first();
+
+        if (!$company)
+            return redirect()->back();
+
+        return view('tenants.companies.show', compact('company'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  string  $domain
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($domain)
+    {
+        // $company = $this->company->find($id);
+        $company = $this->company->where('domain', $domain)->first();
+
+        if (!$company)
+            return redirect()->back();
+
+        return view('tenants.companies.edit', compact('company'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  App\Http\Requests\Tenant\StoreUpdateCompanyFormRequest  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(StoreUpdateCompanyFormRequest $request, $id)
+    {
+        if (!$company = $this->company->find($id))
+            return redirect()->back()->withInput();
+
+        $company->update($request->all());
+
+        return redirect()
+            ->route('company.index')
+            ->withSuccess('Actualización exitosa');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        if (!$company = $this->company->find($id))
+            return redirect()->back();
+
+        $company->delete();
+
+        return redirect()
+            ->route('company.index')
+            ->withSuccess('Borrado exitoso');
     }
 }
