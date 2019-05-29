@@ -6,6 +6,8 @@ use App\Models\Company;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Events\Tenant\CompanyCreated;
+use App\Events\Tenant\DatabaseCreated;
+
 
 class CompanyController extends Controller
 {
@@ -27,8 +29,16 @@ class CompanyController extends Controller
             'bd_username' => 'root', 
             'bd_password' => 'Metal00'
         ]);
-
+        
         event(new CompanyCreated($company));
+
+        // esto es para migrar en caso de que ya tenga la base
+        // y quiero sobreescribir datos de conexión (creo)
+        // ver video 2.13
+        // if (true)
+        //     event(new CompanyCreated($company));
+        // else
+        //     event(new DatabaseCreated($company));
 
         dd($company);
     }
