@@ -3,6 +3,7 @@
 namespace App\Listeners\Tenant;
 
 use App\Events\Tenant\CompanyCreated;
+use App\Events\Tenant\DatabaseCreated;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Tenant\Database\DatabaseManager;
@@ -30,6 +31,15 @@ class CreateCompanyDatabase
     public function handle(CompanyCreated $event)
     {
         $company = $event->company();
-        $this->database->createDatabase($company);
+
+        // Observar '!' antes de $this
+        if (!$this->database->createDatabase($company))
+        {
+            throw new \Exception('Database creation failed');
+        }
+
+        // correr migraciones
+        event(new DatabaseCreated($company));
+
     }
 }
