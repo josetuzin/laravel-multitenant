@@ -30,7 +30,7 @@ class TenantMiddleware
             $manager->setConnection($company);
 
             $this->setSessionCompany($company->only([
-                'name',
+                'name', 'uuid',
             ]));
         }
         return $next($request);
